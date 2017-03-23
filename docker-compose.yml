@@ -1,0 +1,45 @@
+# docker-compose --file ./docker-compose.yml up --build --force-recreate
+# docker stop $(docker ps -a -q) && docker rm $(docker ps -a -q)
+version: '2'
+services:
+  web:
+    tty: true
+    stdin_open: true
+    restart: always
+    build: ./docker/nginx
+    ports:
+      - "8082:80"
+    volumes:
+      - ./docker/nginx/site.conf:/etc/nginx/conf.d/site.conf
+    volumes_from:
+      - php:rw
+    links:
+      - php
+  php:
+    tty: true
+    stdin_open: true
+    restart: always
+    build: ./docker/php
+    ports:
+      - "9000:9000"
+    depends_on:
+      - db
+    links:
+      - db
+    volumes:
+      - ./docker/php/symfony.ini:/etc/php/7.0/cli/conf.d/symfony.ini
+      - ./docker/php/symfony.ini:/etc/php/7.0/fpm/conf.d/symfony.ini
+      - ./docker/php/symfony.pool.conf:/etc/php/7.0/fpm/pool.d/symfony.pool.conf
+      - ./code:/application:rw
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_USER: sf
+      MYSQL_PASSWORD: sf
+  db:
+    image: mysql
+    ports:
+      - "3306:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_USER: sf
+      MYSQL_PASSWORD: sf
